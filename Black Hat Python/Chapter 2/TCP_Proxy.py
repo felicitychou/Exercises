@@ -2,6 +2,7 @@ import sys
 import socket
 import threading
 
+
 def server_loop(local_host,local_port,remote_host,remote_port,receive_first):
 
 	server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -48,22 +49,22 @@ def proxy_handler(client_socket,remote_host,remote_port,receive_first):
 		if len(local_buffer):
 			print "[==>] Received %d bytes from localhost." % len(local_buffer)
 			hexdump(local_buffer)
-			local_buffer = request_handle(local_buffer)
+			local_buffer = request_handler(local_buffer)
 
 			remote_socket.send(local_buffer)
 			print "[==>] Sent to remote."
 
 		remote_buffer = receive_from(remote_socket)
 
-	if len(remote_buffer):
+		if len(remote_buffer):
 
-		print "[<==] Received %d bytes from remote." % len(remote_buffer)
-		hexdump(remote_buffer)
-		remote_buffer = response_handler(remote_buffer)
+			print "[<==] Received %d bytes from remote." % len(remote_buffer)
+			hexdump(remote_buffer)
+			remote_buffer = response_handler(remote_buffer)
 
-		client_socket.send(remote_buffer)
+			client_socket.send(remote_buffer)
 
-		print "[<==] Sent to localhost."
+			print "[<==] Sent to localhost."
 
 		if not len(local_buffer) or not len(remote_buffer):
 			client_socket.close()
@@ -78,13 +79,37 @@ def hexdump(src, length=16):
 
 	for i in xrange(0, len(src), length):
 		s = src[i:i+length]
-		hexa = b' '.join(["%0*X" % (digits, ord(x))] for x in s)
+		hexa = b' '.join(["%0*X" % (digits, ord(x)) for x in s])
 		text = b''.join([x if 0x20 <= ord(x) < 0x7F else b'.' for x in s])
 		result.append(b"%04X %-*s %s" % (i, length*(digits + 1), hexa, text))
 
 	print b'\n'.join(result)
 
+def receive_from(connection):
 
+	buffer = ""
+
+	connection.settimeout(2)
+
+	try:
+
+		while True:
+			data = connection.recv(4096)
+
+			if not data:
+				break
+
+			buffer += data
+	except Exception, e:
+		pass
+
+	return buffer
+
+def request_handler(buffer):
+	return buffer
+
+def response_handler(buffer):
+	return buffer
 
 def main():
 
@@ -108,5 +133,5 @@ def main():
 
 	server_loop(local_host,local_port,remote_host,remote_port,receive_first)
 
-	if __name__ == '__main__':
-		main()
+if __name__ == '__main__':
+	main()
